@@ -1,4 +1,4 @@
-require('dotenv').config();
+
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { DATABASE_NAME, DATABASE_USERNAME, DATABASE_PASSWORD } = process.env;
 

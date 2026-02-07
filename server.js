@@ -2,7 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+// importing third party files
 const { connectDB } = require('./src/db');
+const { setUpAPI } = require('./src/api');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -11,15 +13,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// routes
-
-
-
 // server start
-const startServer = async (req, res) => {
+const startServer = async () => {
     try {
         // connect database first
         await connectDB();
+        setUpAPI(app);
 
         // now listen
         app.listen(PORT, () => {

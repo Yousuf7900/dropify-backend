@@ -52,7 +52,10 @@ const setUpAPI = (app) => {
 
 
     // products related all api's here
-
+    app.get('/products', async (req, res) => {
+        const result = await productsCollection.find().toArray();
+        res.send(result);
+    })
 
 
 

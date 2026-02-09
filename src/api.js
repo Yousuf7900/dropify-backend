@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { getCollections } = require('./collections');
+const { ObjectId } = require('mongodb');
 
 const setUpAPI = (app) => {
     const { usersCollection, productsCollection } = getCollections();
@@ -52,10 +53,20 @@ const setUpAPI = (app) => {
 
 
     // products related all api's here
+
+    // get all the products
     app.get('/products', async (req, res) => {
         const result = await productsCollection.find().toArray();
         res.send(result);
     })
+
+    // Add new product to the database
+    app.post('/products', async (req, res) => {
+        const productData = req.body;
+        const result = await productsCollection.insertOne(productData);
+        res.send(result);
+    })
+
 
 
 

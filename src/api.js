@@ -41,12 +41,28 @@ const setUpAPI = (app) => {
             $setOnInsert: {
                 role: userInfo.role || 'user',
                 createdAt: userInfo.createdAt,
-                email: userInfo.email
+                email: userInfo.email,
+                isBlocked: userInfo.isBlocked,
+                authProvider: userInfo.authProvider,
+                subscription: userInfo.subscription,
+                subscriptionPlan: userInfo.subscriptionPlan,
             }
         };
 
         const options = { upsert: true };
         const result = await usersCollection.updateOne(filter, updateDoc, options);
+        res.send(result);
+    });
+
+    // get user by email for role
+    app.get('/users/:email', verifyToken, async (req, res) => {
+        const userEmail = req.params.email;
+        const decodedEmail = req.decoded.email;
+        if (userEmail !== decodedEmail) {
+            return res.status(403).send({ message: "Forbidden access" });
+        }
+
+        const result = await usersCollection.findOne({ email: userEmail });
         res.send(result);
     });
 
@@ -69,9 +85,27 @@ const setUpAPI = (app) => {
 
     // Add new product to the database
     app.post('/products', verifyToken, async (req, res) => {
-        const productData = req.body;
-        const result = await productsCollection.insertOne(productData);
-        res.send(result);
+        try {
+            const productData = req.body;
+            const userEmail = req.decoded.email;
+            const filter = { email: userEmail };
+            const user = await usersCollection.findOne(filter);
+            if (!user) {
+                return res.status(404).send({ message: "User not found" });
+            }
+
+            if (!user.subscription) {
+                const count = await productsCollection.countDocuments({ ownerEmail: userEmail });
+                if (count >= 1) {
+                    return res.status(403).send({ message: "Free users can add only 1 product. Please subscribe" });
+                }
+            }
+            const result = await productsCollection.insertOne(productData);
+            res.send(result);
+        }
+        catch (error) {
+            res.status(500).send({ message: 'Failed to add product' });
+        };
     });
 
     // user based product
@@ -84,13 +118,7 @@ const setUpAPI = (app) => {
 
 
 
-
-
-
-
     // review related all api's here
-
-
 
 
 };

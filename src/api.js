@@ -20,6 +20,7 @@ const setUpAPI = (app) => {
     })
 
 
+
     // users related all api's here
     app.patch('/users', async (req, res) => {
         const userInfo = req.body;
@@ -59,13 +60,30 @@ const setUpAPI = (app) => {
         const result = await productsCollection.find().toArray();
         res.send(result);
     })
+    // featured products get
+    app.get('/products/featured', async (req, res) => {
+        const filter = { featured: true, status: "accepted" };
+        const result = await productsCollection.find(filter).sort({ createdAt: -1 }).limit(4).toArray();
+        res.send(result);
+    })
 
     // Add new product to the database
     app.post('/products', verifyToken, async (req, res) => {
         const productData = req.body;
         const result = await productsCollection.insertOne(productData);
         res.send(result);
+    });
+
+    // user based product
+    app.get('/products/:email', async (req, res) => {
+        const email = req.params.email;
+        const filter = { ownerEmail: email };
+        const result = await productsCollection.find(filter).toArray();
+        res.send(result);
     })
+
+
+
 
 
 

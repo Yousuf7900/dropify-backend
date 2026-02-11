@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { getCollections } = require('./collections');
 const verifyToken = require('./middlewares/verifyToken');
+const verifyAdmin = require('./middlewares/verifyAdmin');
+const { ObjectId } = require('mongodb');
 
 const setUpAPI = (app) => {
     const { usersCollection, productsCollection } = getCollections();
@@ -22,6 +24,7 @@ const setUpAPI = (app) => {
 
 
     // users related all api's here
+
     app.patch('/users', async (req, res) => {
         const userInfo = req.body;
 
@@ -55,7 +58,7 @@ const setUpAPI = (app) => {
     });
 
     // get user by email for role
-    app.get('/users/:email', verifyToken, async (req, res) => {
+    app.get('/users/:email', verifyToken, verifyAdmin, async (req, res) => {
         const userEmail = req.params.email;
         const decodedEmail = req.decoded.email;
         if (userEmail !== decodedEmail) {
@@ -65,6 +68,12 @@ const setUpAPI = (app) => {
         const result = await usersCollection.findOne({ email: userEmail });
         res.send(result);
     });
+
+    // for admin user control get all the user
+    app.get('/users', verifyToken, async (req, res) => {
+        const result = await usersCollection.find().toArray();
+        res.send(result);
+    })
 
 
 
@@ -109,10 +118,17 @@ const setUpAPI = (app) => {
     });
 
     // user based product
-    app.get('/products/:email', async (req, res) => {
+    app.get('/products/:email', verifyToken, async (req, res) => {
         const email = req.params.email;
         const filter = { ownerEmail: email };
         const result = await productsCollection.find(filter).toArray();
+        res.send(result);
+    })
+    // delete product
+    app.delete('/products/:id', async (req, res) => {
+        const productId = req.params.id;
+        const filter = { _id: new ObjectId(productId) };
+        const result = await productsCollection.deleteOne(filter);
         res.send(result);
     })
 

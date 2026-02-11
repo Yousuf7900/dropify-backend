@@ -13,10 +13,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors(
     {
         origin: [
-            'https://dropify-shop.web.app'
+            'https://dropify-shop.web.app',
+            'http://localhost:5173'
         ]
     }
 ));
+
 app.use(express.json());
 
 // server start

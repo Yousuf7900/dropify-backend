@@ -76,7 +76,7 @@ const setUpAPI = (app) => {
     })
 
     // update user role
-    app.patch('/users/:email', async (req, res) => {
+    app.patch('/users/:email', verifyToken, verifyAdmin, async (req, res) => {
         try {
             const email = req.params.email;
             const { role } = req.body;
@@ -102,15 +102,53 @@ const setUpAPI = (app) => {
 
     // get all the products
     app.get('/products', async (req, res) => {
-        const result = await productsCollection.find().toArray();
+        const query = { status: 'accepted' };
+        const result = await productsCollection.find(query).toArray();
         res.send(result);
     })
-    // featured products get
-    app.get('/products/featured', async (req, res) => {
-        const filter = { featured: true, status: "accepted" };
-        const result = await productsCollection.find(filter).sort({ createdAt: -1 }).limit(4).toArray();
-        res.send(result);
-    })
+
+    // featured products get 
+    app.get("/products/review-queue", async (req, res) => {
+        try {
+            const query = {
+                $or: [
+                    { status: "pending" },
+                    { status: "accepted", featured: false }
+                ]
+            };
+
+            const result = await productsCollection
+                .find(query)
+                .sort({ createdAt: -1 })
+                .toArray();
+
+            res.send(result);
+        } catch (err) {
+            res.status(500).send({ message: "Queue load failed", error: err.message });
+        }
+    });
+
+
+    // moderator update 
+    app.patch("/products/status/:id", async (req, res) => {
+        console.log("PATCH hit:", req.params.id, req.body);
+
+        try {
+            const { id } = req.params;
+            const { status, featured } = req.body;
+            const filter = { _id: new ObjectId(id) };
+
+            const updateDoc = { $set: { lastUpdate: new Date() } };
+            if (status) updateDoc.$set.status = status;
+            if (typeof featured === "boolean") updateDoc.$set.featured = featured;
+
+            const result = await productsCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        } catch (err) {
+            res.status(500).send({ message: "Update failed", error: err.message });
+        }
+    });
+
 
     // Add new product to the database
     app.post('/products', verifyToken, async (req, res) => {

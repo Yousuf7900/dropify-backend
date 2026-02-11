@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors(
     {
         origin: [
-            'https://dropify-shop.web.app/'
+            'https://dropify-shop.web.app'
         ]
     }
 ));

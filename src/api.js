@@ -58,7 +58,7 @@ const setUpAPI = (app) => {
     });
 
     // get user by email for role
-    app.get('/users/:email', verifyToken, verifyAdmin, async (req, res) => {
+    app.get('/users/:email', verifyToken, async (req, res) => {
         const userEmail = req.params.email;
         const decodedEmail = req.decoded.email;
         if (userEmail !== decodedEmail) {
@@ -75,6 +75,26 @@ const setUpAPI = (app) => {
         res.send(result);
     })
 
+    // update user role
+    app.patch('/users/:email', async (req, res) => {
+        try {
+            const email = req.params.email;
+            const { role } = req.body;
+            const filter = { email };
+            const updateRole = {
+                $set: {
+                    role: role
+                }
+            };
+            const result = await usersCollection.updateOne(filter, updateRole);
+            res.send(result);
+        }
+        catch (error) {
+            console.log("Role Update Error:", error);
+            res.status(500).send({ message: "Failed to update role" });
+        }
+
+    })
 
 
 
@@ -124,6 +144,41 @@ const setUpAPI = (app) => {
         const result = await productsCollection.find(filter).toArray();
         res.send(result);
     })
+
+    app.patch("/products/:id", verifyToken, async (req, res) => {
+        try {
+            const id = req.params.id;
+            const updatedData = req.body;
+            const userEmail = req.decoded.email;
+
+            const filter = { _id: new ObjectId(id) };
+
+            const product = await productsCollection.findOne(filter);
+            if (!product) return res.status(404).send({ message: "Product not found" });
+
+            if (product.ownerEmail !== userEmail) {
+                return res.status(403).send({ message: "Forbidden access" });
+            }
+
+            const updateDoc = {
+                $set: {
+                    productName: updatedData.productName,
+                    productImage: updatedData.productImage,
+                    productDesc: updatedData.productDesc,
+                    externalLink: updatedData.externalLink,
+                    tags: updatedData.tags,
+                    lastUpdate: updatedData.lastUpdate,
+                },
+            };
+
+            const result = await productsCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        } catch (error) {
+            console.log("PATCH ERROR:", error);
+            res.status(500).send({ message: "Internal Server Error" });
+        }
+    });
+
     // delete product
     app.delete('/products/:id', async (req, res) => {
         const productId = req.params.id;
